@@ -1,4 +1,5 @@
-#Docker-compose.yml
+version: "3.8" # It's a good practice to specify the Compose version
+
 services:
   strapi:
     build: .
@@ -23,21 +24,29 @@ services:
       - ./src:/app/src
       - ./public/uploads:/app/public/uploads
     ports:
-      - "1338:1337"
+      - "1338:1337" # Exposing Strapi on port 1338 (host) -> 1337 (container)
     depends_on:
-      - postgresql
+      - postgresql # This will wait until PostgreSQL is running
+    networks:
+      - strapi_network
+
+  postgresql:
+    image: postgres:latest
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    networks:
+      - strapi_network
 
 volumes:
   strapi-data:
 
-postgresql:
-  image: postgres:latest
-  restart: unless-stopped
-  environment:
-    POSTGRES_DB: ${DATABASE_NAME}
-    POSTGRES_USER: ${DATABASE_USERNAME}
-    POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-  ports:
-    - "5432:5432"
-  volumes:
-    - ./postgres-data:/var/lib/postgresql/data
+networks:
+  strapi_network:
+    driver: bridge
